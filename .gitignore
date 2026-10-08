@@ -1,0 +1,57 @@
+# Compiled binaries
+/pdfsign-bench
+/pdfverify-bench
+/pdfsign-spike
+/pdfverify-spike
+/bin/
+/dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binaries, coverage and profiles
+*.test
+*.out
+*.prof
+*.pprof
+/coverage/
+/coverage*.txt
+/coverage*.html
+
+# Local certificates, private keys and credentials
+.local/
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+*.jks
+
+# Generated PDFs, benchmark results and temporary files
+/output/
+/results/
+/tmp/
+*.log
+*.tmp
+
+# Local test documents and signature images
+/testdata/*.pdf
+/testdata/*.png
+/testdata/*.jpg
+/testdata/*.jpeg
+
+# Local analysis and editor files
+/graphify-out/
+/.codex/
+/.agents/
+/.idea/
+/.vscode/
+.DS_Store
+._*
+*.swp
+*.swo
+*~
