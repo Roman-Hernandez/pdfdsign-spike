@@ -142,14 +142,18 @@ El tipo predeterminado es aprobación. Una cuarta firma de otro firmante requier
 
 `-measure` muestra tiempo de pared, asignaciones, heap actual/delta y ciclos GC. No mide RSS ni pico real de memoria. En firma incluye creación de apariencia y controles internos; excluye carga inicial de clave/imagen. El tiempo de TSA puede dominar la operación.
 
-El script `benchmark-firmas.sh` utiliza las rutas fijas de la tabla anterior, salvo la imagen, que no necesita. Compila primero el binario esperado:
+El script `benchmark-firmas.sh` toma las rutas de los recursos desde variables de entorno, sin depender de nombres de archivos específicos. Compila primero el binario esperado:
 
 ```bash
 go build -o pdfsign-bench ./cmd/pdfsign-spike
+export PDFSIGN_INPUT="/ruta/a/documento.pdf"
+export PDFSIGN_CERT="/ruta/a/certificado.pem"
+export PDFSIGN_KEY="/ruta/a/clave-privada.pem"
+# Opcional: export PDFSIGN_CHAIN="/ruta/a/intermedia.pem"
 bash benchmark-firmas.sh 10 2
 ```
 
-Los argumentos son total de operaciones y concurrencia, ambos enteros positivos. El ejemplo realiza diez firmas con dos procesos concurrentes. El script crea PDFs y utiliza FreeTSA por defecto: ejecútalo solo cuando quieras realizar esa comprobación y utilizar el servicio. No es un benchmark exclusivamente criptográfico ni desconectado de la red. Puedes seleccionar un servicio controlado mediante `PDFSIGN_TSA_URL`; el script actual no expone una opción para desactivar TSA.
+`PDFSIGN_INPUT`, `PDFSIGN_CERT` y `PDFSIGN_KEY` son obligatorias; `PDFSIGN_CHAIN` es opcional y se omite de la firma cuando está vacía. Opcionalmente puedes configurar `PDFSIGN_BENCH_BIN` (predeterminado `./pdfsign-bench`) y `PDFSIGN_OUTPUT_DIR` (predeterminado `output/benchmark`). Los argumentos son total de operaciones y concurrencia, ambos enteros positivos. El ejemplo realiza diez firmas con dos procesos concurrentes. El script crea PDFs y utiliza FreeTSA por defecto: ejecútalo solo cuando quieras realizar esa comprobación y utilizar el servicio. No es un benchmark exclusivamente criptográfico ni desconectado de la red. Puedes seleccionar un servicio controlado mediante `PDFSIGN_TSA_URL`; el script actual no expone una opción para desactivar TSA.
 
 Los resultados quedan en `output/benchmark/carga-10-2/`: `firma-N.pdf`, `firma-N.log` y `exit-N.txt`. El resumen cuenta éxito por código 0 y existencia de un PDF no vacío. El proceso de firma ejecuta verificaciones internas; esto no demuestra confianza pública, revocación ni conformidad DocMDP. El script no ejecuta una fase independiente de benchmark del verificador ni informa un pico de memoria.
 

@@ -4,7 +4,34 @@ set -u
 
 TOTAL="${1:-100}"
 CONCURRENCIA="${2:-10}"
-DIR="output/benchmark/carga-${TOTAL}-${CONCURRENCIA}"
+: "${PDFSIGN_INPUT:?Defina PDFSIGN_INPUT con la ruta del PDF de entrada}"
+: "${PDFSIGN_CERT:?Defina PDFSIGN_CERT con la ruta del certificado PEM}"
+: "${PDFSIGN_KEY:?Defina PDFSIGN_KEY con la ruta de la clave privada PEM}"
+PDFSIGN_CHAIN="${PDFSIGN_CHAIN:-}"
+PDFSIGN_BENCH_BIN="${PDFSIGN_BENCH_BIN:-./pdfsign-bench}"
+PDFSIGN_OUTPUT_DIR="${PDFSIGN_OUTPUT_DIR:-output/benchmark}"
+DIR="${PDFSIGN_OUTPUT_DIR}/carga-${TOTAL}-${CONCURRENCIA}"
+
+if ! [[ "$TOTAL" =~ ^[1-9][0-9]*$ && "$CONCURRENCIA" =~ ^[1-9][0-9]*$ ]]; then
+  echo "Total y concurrencia deben ser enteros positivos" >&2
+  exit 1
+fi
+for file in "$PDFSIGN_INPUT" "$PDFSIGN_CERT" "$PDFSIGN_KEY"; do
+  if [ ! -f "$file" ]; then
+    echo "No existe el archivo: $file" >&2
+    exit 1
+  fi
+done
+if [ -n "$PDFSIGN_CHAIN" ] && [ ! -f "$PDFSIGN_CHAIN" ]; then
+  echo "No existe la cadena PEM: $PDFSIGN_CHAIN" >&2
+  exit 1
+fi
+if [ ! -f "$PDFSIGN_BENCH_BIN" ]; then
+  echo "No existe el ejecutable: $PDFSIGN_BENCH_BIN" >&2
+  exit 1
+fi
+
+export PDFSIGN_INPUT PDFSIGN_CERT PDFSIGN_KEY PDFSIGN_CHAIN PDFSIGN_BENCH_BIN
 
 mkdir -p "$DIR"
 
@@ -17,14 +44,15 @@ seq 1 "$TOTAL" | xargs -P "$CONCURRENCIA" -I '{}' \
   sh -c '
     i="$1"
     dir="$2"
-
-    ./pdfsign-bench \
-      -input testdata/prueba-sign-spike.pdf \
+    set -- -input "$PDFSIGN_INPUT" \
       -output "$dir/firma-$i.pdf" \
-      -cert .local/test-certs/certificate.pem \
-      -key .local/test-certs/private-key.pem \
-      -chain .local/test-certs/lacuna-ca-test-v7.pem \
-      -visible=false \
+      -cert "$PDFSIGN_CERT" \
+      -key "$PDFSIGN_KEY"
+    if [ -n "$PDFSIGN_CHAIN" ]; then
+      set -- "$@" -chain "$PDFSIGN_CHAIN"
+    fi
+
+    "$PDFSIGN_BENCH_BIN" "$@" -visible=false \
       > "$dir/firma-$i.log" 2>&1
 
     echo "$?" > "$dir/exit-$i.txt"
